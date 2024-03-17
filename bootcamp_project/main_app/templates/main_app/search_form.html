@@ -1,0 +1,20 @@
+<html>
+
+<head>
+<title> Search form </title>
+</head>
+
+
+<body>
+<form method="post" action="{% url 'search_form'%}">
+    {% csrf_token %}
+    <label for="game_name">Enter Game Name:</label>
+    <input type="text" id="game_name" name="game_name" required>
+    <button type="submit">Search</button>
+</form>
+
+<a href ="{% url 'main'%}">Go back to main view</a>
+
+</body>
+
+</html>

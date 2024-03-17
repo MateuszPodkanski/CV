@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>List of games</title>
+
+</head>
+
+<body>
+
+ <form method="post" action="{% url 'main' %}">
+    {% csrf_token %}
+    <label for="search_term">Search Term:</label>
+    <input type="text" name="search_term" id="search_term">
+    
+    <label for="column_parameter">Column Parameter:</label>
+    <select name="column_parameter" id="column_parameter">
+        <option value="name">Name</option>
+        <option value="release_date">Year of Publishment</option>
+        <option value="rating">Grade</option>
+    </select>
+    
+    <button type="submit">Search</button>
+</form>
+
+<h2>List of games</h2>
+
+<table border = "1">
+    <tr>
+        <th>Name</th>
+        <th>Year of publishment</th>
+        <th>Grade</th>
+    </tr>
+    {% for game in games %}
+        <tr>
+            <td>{{ game.name }}</td>
+            <td>{{ game.release_date }}</td>
+            <td>{{ game.rating }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<a href = "{% url 'search_form'%}">Search form</a>
+
+</body>
+
+</html>
