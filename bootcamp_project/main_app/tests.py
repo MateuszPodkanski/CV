@@ -5,6 +5,7 @@ from .forms import GameForm, FilterForm
 from django.urls import reverse, resolve
 from .views import MainView, SearchFormView, ErrorMessageView, SuccessView, InDatabaseView
 from django.contrib.auth.models import User
+from unittest.mock import patch
 
 
 class GameModelTestCase(TestCase):
@@ -17,7 +18,7 @@ class GameModelTestCase(TestCase):
         self.assertEqual(saved_game.release_date, date(2022,1,1))
         self.assertEqual(saved_game.rating,4.5)    
 
-class GameFortTest(TestCase):
+class GameFormTest(TestCase):
     def test_game_from_valid_data(self):
         form = GameForm(data={'game_name': "Test Game"})
         self.assertTrue(form.is_valid())
@@ -80,7 +81,7 @@ class MainViewTestCase(TestCase):
         games = response.context['games']
         self.assertEqual(len(games),2)
         self.assertIn(self.game1,games)
-        self.assertIN(self.game2,games)
+        self.assertIn(self.game2,games)
 
     
     
@@ -142,5 +143,82 @@ class ErrorMessageViewTestCase(TestCase):
         self.assertTemplateUsed(response, 'main_app/error_template.html')
 
         self.assertIn('error_message',response)
+
         self.assertEqual(response.context['error_message'], self.error_message)
+
+class InDatabaseViewTestCase(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.message = "Test game in database message"
+
+    def test_indatabase_view(self):
+
+        request = self.factory.get(reverse('message'))
+
+        response = InDatabaseView.as_view()(request)
+
+        self.assertEqual(response.status_code,200)
+
+        self.assertTemplateUsed(response,'main_app/game_in_database.html')
+
+        self.assertIn('message',response)
+
+        self.assertEqual(response.context['message'],self.message)
+
+class SearchFormViewTestCase(TestCase):
+    
+    def Setup(self):
+        self.factory = RequestFactory()
+
+    def test_search_form_get(self):
+        request = self.factory.get(reverse('search_form'))
+        response = SearchFormView.as_view()(request)
+
+        self.assertEqual(response.status_code,200)
+        self.assertTemplateUsed(response, 'main_app/search_form.html')
+        self.assertIn('form',response.context)
+        self.assertIsInstance(response.context['form'], GameForm)
+
+    @patch('main_app.views.Game.objects.filter')
+    @patch('main_app.views.GamesApiHandler')
+    def test_search_form_post(self, mock_handler, mock_filter):
+        mock_handler_instance = mock_handler.return_value
+        mock_handler_instance.get_name.return_value = 'Test Game'
+        mock_handler_instance.get_rating.return_value = 8.5
+        mock_handler_instance.get_release_date.return_value = "2022-01-01"
+
+        mock_filter.return_value.first.return_value = None
+
+        request = self.factory.post(reverse('search_form'), data={'game_name': 'Test Game'})
+        response = SearchFormView.as_view()(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('success'))
+
+    @patch('main_app.views.GamesApiHandler')
+    def test_api_data_fetching(self, mock_handler):
+        
+        request = self.factory.post(reverse('search_form'), data={'game_name': 'Test Game'})
+
+        mock_handler_instance = mock_handler.return_value
+        mock_handler_instance.get_data_return_value = {'game_name': 'Test Game', 'rating': 8.5, 'release_date': '2022-01-01'}
+
+        response = SearchFormView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn('game_name', response.context)
+        self.assertEqual(response.context['game_name'], 'Test Game')
+        self.assertIn('rating', response.context)
+        self.assertEqual(response.context['rating'], 8.5)
+        self.assertIn('release_date',response.context)
+        self.assertEqual(response.context['release_date'], '2022-01-01')
+
+
+
+
+
+
+
 
