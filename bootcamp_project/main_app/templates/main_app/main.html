@@ -4,29 +4,41 @@
 <head>
 
     <title>List of games</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
 </head>
 
 <body>
 
- <form method="post" action="{% url 'main' %}">
+
+
+    <style>
+        body {
+            background-color: #f2ae49;
+            font-family: 'Poetsen one', sans-serif; 
+        }
+    </style>
+
+ <form method="post" action="{% url 'main' %}" class="rounded p-3" style="background-color: #ff882c;">
     {% csrf_token %}
-    <label for="search_term">Search Term:</label>
-    <input type="text" name="search_term" id="search_term">
+    <label for="search_term" class="font-weight-bold text-uppercase text-primary">Search Term:</label>
+    <input type="text" name="search_term" id="search_term" class="form-control rounded-pill mb-3">
     
-    <label for="column_parameter">Column Parameter:</label>
-    <select name="column_parameter" id="column_parameter">
+    <label for="column_parameter" class="font-weight-bold text-uppercase text-primary">Column Parameter:</label>
+    <select name="column_parameter" id="column_parameter" class="form-control rounded-pill mb-3">
         <option value="name">Name</option>
         <option value="release_date">Year of Publishment</option>
         <option value="rating">Grade</option>
     </select>
     
-    <button type="submit">Search</button>
+    <button type="submit" class="btn-primary rounded pill">Search</button>
 </form>
 
 <h2>List of games</h2>
 
-<table border = "1">
+<div class="table responsive">
+<table class="table">
     <tr>
         <th>Name</th>
         <th>Year of publishment</th>
@@ -40,8 +52,9 @@
         </tr>
     {% endfor %}
 </table>
+</div>
 
-<a href = "{% url 'search_form'%}">Search form</a>
+<a href = "{% url 'search_form'%}" class ="btn btn-primary rounded pill" >Search form</a>
 
 </body>
 

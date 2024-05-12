@@ -1,11 +1,51 @@
-from django.test import TestCase,SimpleTestCase,RequestFactory
+from django.test import TestCase,SimpleTestCase,RequestFactory,Client
 from .models import Game
 from datetime import date
 from .forms import GameForm, FilterForm
 from django.urls import reverse, resolve
 from .views import MainView, SearchFormView, ErrorMessageView, SuccessView, InDatabaseView
 from django.contrib.auth.models import User
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+from main_app.api_handler.my_api_handler import GamesApiHandler, MyApiHandler
+
+class MyApiHandlerTestCase(TestCase):
+    def setUp(self):
+        self.base_url = 'http://example.com'
+        self.api_handler = MyApiHandler(self.base_url)
+
+
+    @patch('myapp.api_handlers.requests.get')
+    def test_get_data_success(self, mock_get):
+        mock_response = mock_get.return_value
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'data': 'mocked_data'}
+
+        data = self.api_handler.get_data('/endpoint')
+
+        self.assertIsNotNone(data)
+        self.assertEqual(data, {'data': 'mocked_data'})
+
+    @patch('myapp.api_handlers.requests.get')
+    def test_get_data_failure(self, mock_get):
+        mock_response = mock_get.return_value
+        mock_response.status_code = 404
+
+        data = self.api_handler.get_data('/invalid_endpoint')
+
+        self.assertIsNone(data)
+
+class GamesApiHandler(TestCase):
+
+    def setUp(self):
+        self.games_api_handler = GamesApiHandler(slug='example_slug',name='example_name',release_date='01-01-2012',rating='4.5')
+
+    def test_update_data(self):
+        self.games_api_handler.update_data(slug='new_slug', name='new_name', release_date ='new_release_date', rating='new_release_date') 
+
+        self.assertEqual(self.games_api_handler.get_slug,'new_slug') 
+        self.assertEqual(self.games_api_handler.get_name,'new_name')     
+        self.assertEqual(self.games_api_handler.get_name,'new_release_date')
+        self.assertEqual(self.games_api_handler.get_name,'new_rating')
 
 
 class GameModelTestCase(TestCase):
@@ -62,16 +102,14 @@ class TestUrls(SimpleTestCase):
 
 class MainViewTestCase(TestCase):
     def setUp(self):
-        self.factory = RequestFactory()
+        self.client = Client()
         self.user = User.objects.create(username='test_user')
         self.game1 = Game.objects.create(name='Game 1', release_date='2022-01-01', rating=4.5)
         self.game2 = Game.objects.create(name='Game 2', release_date='2022-02-01', rating=3.8)
 
     
     def test_main_view_get(self):
-        request = self.factory.get(reverse('main'))
-
-        response = MainView.as_view()(request)
+        response = self.client.get(reverse('main'))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response,'main_app/main.html')
@@ -83,13 +121,11 @@ class MainViewTestCase(TestCase):
         self.assertIn(self.game1,games)
         self.assertIn(self.game2,games)
 
-    
-    
+
     def test_main_view_post_valid_form(self):
         data = {'search_term': 'Game 1', 'column_parameter':'name'}
-        request = self.factory.post(reverse('main'),data)
+        response = self.client.get(reverse('main'),data)
 
-        response = MainView.as_view()(request)
         self.assertEqual(response.status_code,200)
         self.assertTemplateUsed(response,'main_app/main.html')
         self.assertIn('games',response.context)
@@ -102,9 +138,8 @@ class MainViewTestCase(TestCase):
     def test_main_view_post_invalid_form(self):
 
         data = {}
-        request = self.factory.post(reverse('main', data))
 
-        response = MainView.as_view()(request)
+        response = self.client.get(reverse('main'),data)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('main'))
 
@@ -168,7 +203,7 @@ class InDatabaseViewTestCase(TestCase):
 
 class SearchFormViewTestCase(TestCase):
     
-    def Setup(self):
+    def setUp(self):
         self.factory = RequestFactory()
 
     def test_search_form_get(self):
@@ -215,10 +250,66 @@ class SearchFormViewTestCase(TestCase):
         self.assertIn('release_date',response.context)
         self.assertEqual(response.context['release_date'], '2022-01-01')
 
+    @patch('main_app.views.GapesApiHandler')
+    def test_api_data_processing(self, mock_handler):
+        request = self.factory.post(reverse('seach_form'), data={'game_name': 'Test Game'})
+        
+        mock_handler_instance = mock_handler.return_value
+        mock_handler_instance.get_data.return_value = {'game_name': 'Test Game', 'rating': 8.5, 'release_date': '2022-01-01'}
 
+        response = SearchFormView.as_view()(request)
 
+        game = Game.objects.filter(name = 'Test Game').first()
 
+        self.assertIsNotNone(game)
+        self.assertEqual(game.rating, 8.5)
+        self.assertEqual(game.release_date, '2022-01-01')
 
+        self.assertEqual(response.status.code, 302)
+        self.assertRedirects (response,reverse('success'))
 
+    
+    def test_existing_game_handling(self):
+        existing_game = Game.objects.create(name='Test game',release_date ='2020-01-01', rating=5.0)
 
+        request = self.factory.post(reverse('search_form'), data={'game_name': 'Test Game'})
 
+        response = SearchFormView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Game is already in database")
+
+    @patch('main_app.views.GamesApiHandler.get_data')
+    def test_api_error_handling(self, mock_get_data):
+        mock_get_data.return_value = None
+
+        request = self.factory.post(reverse('search_form'), data={'game_name': 'Test Game'})
+
+        response = SearchFormView.as_view()(request)
+
+        self.assertEqual(response.status_code,200)
+        self.assertContains(response, "Api broke down sorry")
+
+    def test_invalid_form_data(self):
+            
+        request = self.factory.post(reverse('search_form'), data={})
+
+        response = SearchFormView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTemplateUsed(response, 'main_app/search_form.html')
+
+        self.assertContains(response, "")
+
+        self.assertContains(response, "Something went wrong when validating the data, please try again")
+
+    def test_game_not_found_error_handling(self):
+
+        request = self.factory.post(reverse('search_form'),data={'game_name':'Non existin game'})
+
+        response = SearchFormView.as_view(request)
+
+        self.assertEqual(response.status_code,200)
+
+        self.assertContains(response, "There is no game like that. Please try another one.")

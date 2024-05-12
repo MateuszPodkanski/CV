@@ -4,15 +4,39 @@
 <head>
 
     <title></title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 
 </head>
 <body>
+    <style>
+        body {
+            background-color: #f2ae49; 
+            font-family: 'Poetsen one', sans-serif;
+        }
 
-<h2> Game is in </h2>
+        .container{
+            margin-top: 200px;
+            padding: 20px;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            max-width: 600px;
+            background-color: #ff882c 
+        }
 
-<p>{{message}}</p>
+    </style>
+<div class = "container">
+    <div class = "row justify-content-center">
+        <div class = "col-md-6">
+            <h2> Game is in </h2>
 
-<a href "% url 'main'">Go back to search form view</a>
+            <p>{{message}}</p>
+
+            <a href "% url 'main'" class = "btn btn-primary rounded-pill">Go back to search form view</a>
+        </div>
+    </div>
+</div>
+
 
 </body>
 

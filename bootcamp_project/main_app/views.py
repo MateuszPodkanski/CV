@@ -40,7 +40,6 @@ class MainView(View):
             return render(request, self.template_name, context)
         return redirect ('main')
 
-    
 class BaseTemplateView(View):
 
     template_name = ''

@@ -4,16 +4,42 @@
 <head>
 
     <title></title>
-
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poetsen+One&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<h2> Success </h2>
+    <style>
+        body {
+            background-color: #f2ae49; 
+            font-family: 'Poetsen one', sans-serif;
+        }
 
-<p>{{message}}</p>
+        .container{
+            margin-top: 200px;
+            padding: 20px;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            max-width: 600px;
+            background-color: #ff882c ;
+        }
 
-<a href ="{% url 'main'%}">Go back to main view</a>
+    </style>
+<div class = "container">
+    <div class = "row justify-content-center">
+        <div class = " col-md-6">
+
+            <h2> Success </h2>
+
+            <p>{{success_message}}</p>
+
+            <a href "% url 'main'" class="btn btn-primary rounded-pill">Go back to search form view</a>
+        </div>
+    </div>
+</div>            
 
 </body>
 
 </html>
+
