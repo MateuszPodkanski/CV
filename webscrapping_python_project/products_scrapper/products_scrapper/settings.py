@@ -36,6 +36,16 @@ DOWNLOAD_DELAY = 11
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 #CONCURRENT_REQUESTS_PER_IP = 16
 
+FEEDS = {
+    'products.csv': {
+        'format': 'csv',
+        'encoding': 'utf8',
+        'store_empty': False,  # Jeśli element jest pusty, nie będzie zapisany
+        'fields': ['product_title', 'product_url', 'product_price', 'product_description', 'shop', 'scraping_date', 'ean', 'quantity_available', 'image_url'],
+        'overwrite': False  # Nie nadpisuje pliku, tylko dopisuje dane
+    }
+}
+
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
 
